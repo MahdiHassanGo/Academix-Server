@@ -8,7 +8,7 @@ const port = process.env.PORT || 5000;
 
 const app = express();
 const corsOptions = {
-  origin: ["https://academix-a7d0b.web.app","https://academix-a7d0b.firebaseapp.com","http://localhost:5173"],
+  origin: "http://localhost:5173",
   credentials: true,
 };
 
@@ -203,6 +203,37 @@ async function run() {
         }
       }
     );
+    app.patch(
+      "/users/remove-admin/:id",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const id = req.params.id;
+    
+        if (!ObjectId.isValid(id)) {
+          return res.status(400).send({ message: "Invalid user ID" });
+        }
+    
+        try {
+          const filter = { _id: new ObjectId(id) };
+          const updateDoc = {
+            $set: { role: "student" }, // Change role to "student" or another default role
+          };
+    
+          const result = await userCollection.updateOne(filter, updateDoc);
+    
+          if (result.modifiedCount === 0) {
+            return res.status(404).send({ message: "User not found or not an admin" });
+          }
+    
+          res.send({ message: "Admin role removed successfully" });
+        } catch (error) {
+          console.error("Error removing admin role:", error);
+          res.status(500).send({ message: "Failed to remove admin role", error });
+        }
+      }
+    );
+    
     app.patch(
       "/teachers/:id/reject",
       verifyToken,
